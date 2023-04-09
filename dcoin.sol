@@ -12,15 +12,17 @@ interface IERC20 {
 contract dummy is IERC20
 {
     uint  totalsuplly;
+    uint totalcap;
     mapping(address => uint) balanceof;
     mapping(address=> mapping (address=>uint))public allowance;
     string  name="dcoin";
     string  symbol="d@!c";
     uint decimals=18;
-    constructor(uint total)
+    constructor(uint total,uint t)
     {
         totalsuplly=total;
         balanceof[msg.sender]=totalsuplly;
+        totalcap=t;
     }
     function totalSupply() external view returns (uint)
     {
@@ -49,5 +51,16 @@ contract dummy is IERC20
         allowance[sender][msg.sender]-=amount;
         balanceof[recipient]+=amount;
         return true;
+    }
+    function mint(uint nooftokens) public 
+    {
+        require(totalsuplly+nooftokens<=totalcap);
+        balanceof[msg.sender]+=nooftokens;
+        totalsuplly+=nooftokens;
+    }
+    function burn(uint n) public {
+        require(balanceof[msg.sender]>=n);
+        balanceof[msg.sender]-=n;
+        totalsuplly-=n;
     }
 }
