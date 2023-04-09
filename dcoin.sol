@@ -11,6 +11,7 @@ interface IERC20 {
 }
 contract dummy is IERC20
 {
+    bool public pause=false;
     uint  totalsuplly;
     uint totalcap;
     mapping(address => uint) balanceof;
@@ -18,6 +19,11 @@ contract dummy is IERC20
     string  name="dcoin";
     string  symbol="d@!c";
     uint decimals=18;
+    modifier checkpause()
+    {
+        require(pause==false);
+        _;
+    }
     constructor(uint total,uint t)
     {
         totalsuplly=total;
@@ -32,7 +38,7 @@ contract dummy is IERC20
     {
         return balanceof[account];
     }
-    function transfer(address recipient, uint amount) external returns (bool)
+    function transfer(address recipient, uint amount) external checkpause returns (bool) 
     {
         balanceof[msg.sender]-=amount;
         balanceof[recipient]+=amount;
@@ -45,20 +51,24 @@ contract dummy is IERC20
         emit Approval(msg.sender, spender, amount);
         return true;
     }
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)
+    function transferFrom(address sender, address recipient, uint256 amount) external checkpause returns (bool)
     {
         balanceof[sender]-=amount;
         allowance[sender][msg.sender]-=amount;
         balanceof[recipient]+=amount;
         return true;
     }
-    function mint(uint nooftokens) public 
+    function setpause() public
+    {
+        pause=true;
+    }
+    function mint(uint nooftokens) checkpause public 
     {
         require(totalsuplly+nooftokens<=totalcap);
         balanceof[msg.sender]+=nooftokens;
         totalsuplly+=nooftokens;
     }
-    function burn(uint n) public {
+    function burn(uint n) checkpause public {
         require(balanceof[msg.sender]>=n);
         balanceof[msg.sender]-=n;
         totalsuplly-=n;
