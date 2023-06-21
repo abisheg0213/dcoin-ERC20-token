@@ -1,76 +1,66 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.14;
+
 interface IERC20 {
-    function totalSupply() external view returns (uint);
-    function balanceOf(address account) external view returns (uint);
-    function transfer(address recipient, uint amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint);
-    function approve(address spender, uint amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    event Transfer(address indexed from, address indexed to, uint value);
-    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
-contract dummy is IERC20
+contract Decybertoken is IERC20
 {
-    bool public pause=false;
-    uint  totalsuplly;
-    uint totalcap;
-    mapping(address => uint) balanceof;
-    mapping(address=> mapping (address=>uint))public allowance;
-    string  name="dcoin";
-    string  symbol="d@!c";
-    uint decimals=18;
-    modifier checkpause()
+    string public symbol;
+    string public name;
+    uint public decimals;
+    uint private totalsupply;
+    mapping (address => uint)Balance;
+    mapping (address=> mapping(address=>uint))allowed;
+    constructor()
     {
-        require(pause==false);
-        _;
+        name="D-Coin";
+        symbol="D&C";
+        decimals=18;
+        totalsupply=1_000_000_000_000_000_000;
+        Balance[msg.sender]=totalsupply;
     }
-    constructor(uint total,uint t)
-    {
-        totalsuplly=total;
-        balanceof[msg.sender]=totalsuplly;
-        totalcap=t;
-    }
-    function totalSupply() external view returns (uint)
-    {
-        return totalsuplly;
-    }
-    function balanceOf(address account) external view returns (uint)
-    {
-        return balanceof[account];
-    }
-    function transfer(address recipient, uint amount) external checkpause returns (bool) 
-    {
-        balanceof[msg.sender]-=amount;
-        balanceof[recipient]+=amount;
-        emit Transfer(msg.sender, recipient, amount);
-        return true;
-    }
-    function approve(address spender, uint amount) external returns (bool)
-    {
-        allowance[msg.sender][spender]=amount;
-        emit Approval(msg.sender, spender, amount);
-        return true;
-    }
-    function transferFrom(address sender, address recipient, uint256 amount) external checkpause returns (bool)
-    {
-        balanceof[sender]-=amount;
-        allowance[sender][msg.sender]-=amount;
-        balanceof[recipient]+=amount;
-        return true;
-    }
-    function setpause() public
-    {
-        pause=true;
-    }
-    function mint(uint nooftokens) checkpause public 
-    {
-        require(totalsuplly+nooftokens<=totalcap);
-        balanceof[msg.sender]+=nooftokens;
-        totalsuplly+=nooftokens;
-    }
-    function burn(uint n) checkpause public {
-        require(balanceof[msg.sender]>=n);
-        balanceof[msg.sender]-=n;
-        totalsuplly-=n;
-    }
+        function totalSupply() external view returns (uint256)
+        {
+            return totalsupply;
+        }
+         function balanceOf(address account) external view returns (uint256)
+         {
+             return Balance[account];
+         }
+        function transfer(address to, uint256 amount) external returns (bool)
+        {
+            require(Balance[msg.sender]>=amount, "insufficient balance");
+            Balance[msg.sender]=Balance[msg.sender]-amount;
+            Balance[to]+=amount;
+            emit Transfer(msg.sender, to, amount);
+            return true;
+        } 
+        function approve(address spender, uint256 amount) external returns (bool)
+        {
+            require(Balance[msg.sender]>=amount, "insufficient balance");
+            allowed[msg.sender][spender]=amount;
+            emit Approval(msg.sender, spender, amount);
+            return true;
+        }
+        function allowance(address owner, address spender) external view returns (uint256)
+        {
+            return allowed[owner][spender];
+        }
+        function transferFrom(address from, address to, uint256 amount) external returns (bool)
+        {
+             Balance[from]=Balance[from]-amount;
+             allowed[from][msg.sender]-=amount;
+             Balance[to]+=amount;
+             emit Transfer(from, to, amount);
+             return true;
+        }
 }
